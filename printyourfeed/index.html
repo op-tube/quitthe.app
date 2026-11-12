@@ -1,1 +1,716 @@
-Coming soon!
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Print Your Feed — a placebo feed you can hold</title>
+<style id="page-style"></style>
+<style>
+:root{
+  --paper:#f2eee6;
+  --ink:#17150f;
+  --muted:#6b665c;
+  --line:#dcd6c8;
+  --accent:#e2542c;
+  --green:#2f6b4f;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:
+    radial-gradient(1100px 520px at 50% -8%, #fffdf8, transparent 72%),
+    var(--paper);
+  color:var(--ink);
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing:antialiased;
+  min-height:100vh;
+}
+
+/* ============ SITE UI ============ */
+.site-header{max-width:1080px;margin:0 auto;padding:52px 24px 6px;text-align:center}
+.badge{
+  display:inline-block;font:700 10.5px/1 ui-monospace,SFMono-Regular,Menlo,monospace;
+  letter-spacing:.18em;text-transform:uppercase;color:var(--accent);
+  border:1px solid currentColor;border-radius:999px;padding:8px 13px;
+}
+h1{
+  font-family:Georgia,"Times New Roman",serif;
+  font-size:clamp(40px,7.4vw,76px);
+  line-height:.94;letter-spacing:-.035em;margin:20px 0 12px;font-weight:700;
+}
+h1 em{font-style:italic;color:var(--accent)}
+.tagline{max-width:640px;margin:0 auto;color:var(--muted);font-size:17px;line-height:1.55}
+
+.controls{
+  max-width:1080px;margin:30px auto 0;padding:0 24px;
+  display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:center;
+}
+.seg{display:inline-flex;background:#fff;border:1px solid var(--line);border-radius:999px;padding:4px;gap:4px}
+.seg button{
+  font:600 13px/1 inherit;border:0;background:transparent;color:var(--muted);
+  padding:10px 18px;border-radius:999px;cursor:pointer;transition:.18s;
+}
+.seg button:hover{color:var(--ink)}
+.seg button.on{background:var(--ink);color:#fff}
+.print-btn{
+  font:700 13px/1 inherit;letter-spacing:.02em;background:var(--accent);color:#fff;
+  border:0;border-radius:999px;padding:15px 26px;cursor:pointer;
+  box-shadow:0 8px 20px -8px rgba(226,84,44,.9);transition:.18s;
+}
+.print-btn:hover{transform:translateY(-1px);box-shadow:0 12px 26px -8px rgba(226,84,44,.95)}
+.print-btn:active{transform:translateY(0)}
+
+.cards{
+  max-width:1080px;margin:24px auto 0;padding:0 24px;
+  display:grid;grid-template-columns:repeat(3,1fr);gap:14px;
+}
+@media(max-width:820px){.cards{grid-template-columns:1fr}}
+.card{
+  text-align:left;font:inherit;color:inherit;background:#fff;
+  border:1.5px solid var(--line);border-radius:18px;padding:20px 20px 22px;
+  cursor:pointer;transition:.18s;position:relative;
+}
+.card:hover{border-color:#bfb8a6;transform:translateY(-2px);box-shadow:0 16px 30px -22px rgba(0,0,0,.6)}
+.card.on{border-color:var(--ink);box-shadow:0 0 0 3px rgba(226,84,44,.16)}
+.card .num{font:700 10.5px/1 ui-monospace,monospace;letter-spacing:.16em;color:var(--accent)}
+.card h3{margin:8px 0 6px;font-size:17px;letter-spacing:-.01em}
+.card p{margin:0;color:var(--muted);font-size:13.5px;line-height:1.5}
+
+.custom-panel{
+  max-width:1080px;margin:16px auto 0;padding:22px 24px;
+  background:#fff;border:1.5px solid var(--line);border-radius:18px;
+}
+.cp-head{font:700 10.5px/1 ui-monospace,monospace;letter-spacing:.18em;text-transform:uppercase;color:var(--accent);margin-bottom:16px}
+.cp-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+@media(max-width:640px){.cp-grid{grid-template-columns:1fr}}
+.field{display:flex;flex-direction:column;gap:7px;font-size:13px;color:var(--muted)}
+.field > span{font-weight:600;color:var(--ink);font-size:12.5px}
+.field code{font-family:ui-monospace,monospace;background:#f4f1ea;padding:1px 5px;border-radius:4px;font-size:11.5px}
+.field select,.field textarea{
+  font:inherit;font-size:14px;color:var(--ink);background:#fbfaf6;
+  border:1px solid var(--line);border-radius:11px;padding:11px 12px;width:100%;
+  resize:vertical;
+}
+.field select:focus,.field textarea:focus{outline:2px solid rgba(226,84,44,.35);outline-offset:1px;border-color:var(--accent)}
+.field.check{flex-direction:row;align-items:center;gap:10px;font-size:13.5px}
+.field.check input{width:17px;height:17px;accent-color:var(--accent)}
+.field.check span{font-weight:500;color:var(--muted);font-size:13.5px}
+
+.cp-actions{
+  display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+  margin-top:16px;padding-top:16px;border-top:1px dashed var(--line);
+}
+.preview-btn{
+  font:700 13px/1 inherit;background:var(--ink);color:#fff;border:0;
+  border-radius:999px;padding:13px 22px;cursor:pointer;transition:.18s;
+  display:inline-flex;align-items:center;gap:8px;
+}
+.preview-btn:hover{transform:translateY(-1px);background:#000;box-shadow:0 10px 22px -12px rgba(0,0,0,.7)}
+.preview-btn:active{transform:translateY(0)}
+.preview-btn .arrow{font-size:14px;line-height:1;transition:transform .18s}
+.preview-btn:hover .arrow{transform:translateY(2px)}
+.cp-note{font-size:12.5px;color:var(--muted);line-height:1.4}
+
+/* ---- preview header ---- */
+.preview-heading{
+  max-width:1080px;margin:44px auto 2px;padding:0 24px;text-align:center;
+}
+.preview-heading .kicker{
+  font:700 10px/1 ui-monospace,SFMono-Regular,Menlo,monospace;
+  letter-spacing:.2em;text-transform:uppercase;color:var(--accent);
+}
+.preview-heading h2{
+  font-family:Georgia,"Times New Roman",serif;
+  font-size:clamp(23px,3.6vw,32px);line-height:1.1;
+  letter-spacing:-.02em;margin:11px 0 7px;font-weight:700;
+}
+.preview-heading p{
+  margin:0;color:var(--muted);font-size:14px;line-height:1.5;
+}
+.preview-heading p b{color:var(--ink)}
+
+.preview{max-width:1080px;margin:0 auto;padding:26px 24px 70px;display:flex;justify-content:center}
+#paper-stack{display:flex;justify-content:center;--s:0.55;--pw:210mm;--ph:297mm}
+.page-wrap{
+  width:calc(var(--pw) * var(--s));
+  height:calc(var(--ph) * var(--s));
+  overflow:hidden;background:#fff;
+  box-shadow:0 28px 70px -28px rgba(0,0,0,.5), 0 0 0 1px rgba(0,0,0,.07);
+}
+@keyframes flashPulse{
+  0%{box-shadow:0 28px 70px -28px rgba(0,0,0,.5), 0 0 0 1px rgba(0,0,0,.07)}
+  35%{box-shadow:0 28px 70px -28px rgba(0,0,0,.5), 0 0 0 4px rgba(226,84,44,.5)}
+  100%{box-shadow:0 28px 70px -28px rgba(0,0,0,.5), 0 0 0 1px rgba(0,0,0,.07)}
+}
+.page-wrap.flash{animation:flashPulse .9s ease}
+
+.preview-bar{
+  max-width:1080px;margin:0 auto 12px;padding:0 24px;
+  display:flex;justify-content:space-between;align-items:baseline;gap:12px;
+  font:600 11px/1 ui-monospace,monospace;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);
+}
+.preview-bar.center{justify-content:center;padding-bottom:24px;margin-top:0}
+
+/* ---- privacy policy ---- */
+.privacy-wrap{
+  max-width:1080px;margin:0 auto;padding:0 24px 34px;text-align:center;
+}
+.privacy-btn{
+  font:700 12px/1 inherit;letter-spacing:.06em;
+  background:#fff;color:var(--ink);border:1.5px solid var(--line);
+  border-radius:999px;padding:12px 22px;cursor:pointer;transition:.18s;
+  display:inline-flex;align-items:center;gap:9px;
+}
+.privacy-btn:hover{border-color:var(--ink);transform:translateY(-1px);box-shadow:0 12px 24px -18px rgba(0,0,0,.7)}
+.privacy-btn:active{transform:translateY(0)}
+.privacy-btn .dot{width:7px;height:7px;border-radius:50%;background:var(--green);flex:0 0 auto}
+.privacy-btn .caret{font-size:9px;line-height:1;color:var(--muted);transition:transform .2s}
+.privacy-btn[aria-expanded="true"] .caret{transform:rotate(180deg)}
+.privacy-panel{
+  max-width:520px;margin:14px auto 0;padding:18px 22px;
+  background:#fff;border:1.5px solid var(--line);border-radius:14px;
+  text-align:left;font-size:13.5px;line-height:1.65;color:#3d3d3d;
+  box-shadow:0 18px 40px -30px rgba(0,0,0,.5);
+}
+.privacy-panel[hidden]{display:none}
+.privacy-panel strong{color:var(--ink)}
+
+.site-footer{
+  max-width:1080px;margin:0 auto;padding:0 24px 60px;text-align:center;
+  color:var(--muted);font-size:12.5px;line-height:1.7;
+}
+.site-footer a{color:var(--accent);text-decoration:none}
+.site-footer a:hover{text-decoration:underline}
+
+/* ============ THE PRINTED PAGE ============ */
+.page{
+  width:var(--pw);
+  height:calc(var(--ph) - 0.6mm);
+  background:#fff;
+  color:#111;
+  padding:8mm;
+  overflow:hidden;
+  font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;
+  transform:scale(var(--s));
+  transform-origin:top left;
+}
+.page-inner{display:flex;gap:8mm;height:100%}
+.page-inner.col{flex-direction:column;gap:7mm}
+
+.col-left{flex:0 0 94mm;display:flex;flex-direction:column;align-items:center}
+.col-right{flex:1;min-width:0;overflow:hidden}
+
+.cut-box{border:1.1px dashed #8c8c8c;padding:2mm;background:#fff}
+.cut-box.phone-box{width:94mm;height:199mm}
+.cut-label{
+  margin-top:2mm;font-size:6pt;letter-spacing:.12em;text-transform:uppercase;
+  color:#8c8c8c;text-align:center;
+}
+
+/* phone */
+.phone{
+  width:90mm;height:195mm;border:1.1px solid #111;border-radius:4.5mm;
+  overflow:hidden;display:flex;flex-direction:column;background:#fff;
+}
+.statusbar{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:1.7mm 3mm;font-size:6pt;letter-spacing:.06em;color:#666;
+  border-bottom:.4px solid #eee;flex:0 0 auto;
+}
+.feed{flex:1;overflow:hidden}
+
+/* posts */
+.post{padding:2.2mm 2.6mm 1.9mm;border-bottom:.4px solid #ececec}
+.p-head{display:flex;align-items:center;gap:1.7mm;margin-bottom:1.3mm}
+.av{
+  width:5.8mm;height:5.8mm;border-radius:50%;border:.6px solid #111;
+  display:flex;align-items:center;justify-content:center;
+  font-size:5.6pt;font-weight:700;flex:0 0 auto;line-height:1;
+}
+.p-who{
+  flex:1;min-width:0;font-size:6.6pt;line-height:1.15;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.p-who b{font-weight:700}
+.p-who span{color:#9a9a9a;font-weight:400}
+.p-more{font-size:6pt;color:#c8c8c8;letter-spacing:.12em;line-height:1}
+.p-text{font-size:7.4pt;line-height:1.35;color:#1a1a1a}
+.p-img{
+  margin:1.6mm 0 1mm;height:25mm;background:#f4f2ec;border:.4px solid #e4e0d6;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.8mm;
+}
+.p-img-glyph{font-size:13pt;line-height:1}
+.p-img em{font-size:5.2pt;color:#9a9a9a;font-style:normal;letter-spacing:.08em;text-transform:uppercase}
+.p-foot{display:flex;gap:4.5mm;margin-top:1.5mm;font-size:5.8pt;color:#a8a8a8}
+
+/* strips for infinite scroll */
+.strip-row{display:flex;gap:6mm;justify-content:center}
+.cut-box.strip-box{width:88mm;height:160mm;padding:2mm}
+.strip{
+  width:84mm;height:156mm;border:1.1px solid #111;
+  display:flex;flex-direction:column;overflow:hidden;background:#fff;
+}
+.strip-label{
+  height:4.4mm;flex:0 0 auto;display:flex;align-items:center;justify-content:center;
+  font-size:5.2pt;letter-spacing:.18em;text-transform:uppercase;color:#777;
+  background:#faf9f5;border-bottom:.4px solid #e6e6e6;
+}
+.strip-feed{flex:1;overflow:hidden}
+.tape-bar{
+  height:12mm;flex:0 0 auto;border-top:.9px dashed #111;background:#fff;
+  display:flex;align-items:center;justify-content:center;text-align:center;
+  padding:0 3mm;font-size:5pt;letter-spacing:.1em;text-transform:uppercase;
+  color:#666;line-height:1.35;
+}
+
+/* instructions */
+.inst-kicker{
+  font:700 6.4pt/1 ui-monospace,SFMono-Regular,Menlo,monospace;
+  letter-spacing:.18em;text-transform:uppercase;color:#e2542c;
+}
+.inst h2{
+  font-family:Georgia,"Times New Roman",serif;
+  font-size:14.5pt;line-height:1.1;margin:2.2mm 0 3.2mm;letter-spacing:-.012em;
+}
+.steps{margin:0;padding-left:5mm;font-size:8pt;line-height:1.44;color:#222}
+.steps li{margin-bottom:2.6mm}
+.steps li::marker{font-weight:700;color:#e2542c}
+.steps b{font-weight:700}
+.steps.two-col{columns:2;column-gap:7mm;padding-left:5mm}
+.steps.two-col li{break-inside:avoid}
+
+.why{margin-top:4.5mm}
+.why h3{
+  font:700 6.6pt/1 ui-monospace,monospace;letter-spacing:.16em;text-transform:uppercase;
+  color:#111;margin:0 0 1.4mm;
+}
+.why p{margin:0;font-size:7.2pt;line-height:1.45;color:#3d3d3d}
+.why-row{display:grid;grid-template-columns:1fr 1fr;gap:7mm}
+
+.specs{display:flex;flex-wrap:wrap;gap:1.6mm;margin-top:4.5mm}
+.specs span{
+  border:.5px solid #cfcfcf;border-radius:999px;padding:.9mm 2.2mm;
+  font-size:5.9pt;color:#5a5a5a;letter-spacing:.03em;
+}
+.tip{
+  margin-top:4mm;border-left:1.6px solid #e2542c;padding-left:2.6mm;
+  font-size:7pt;line-height:1.45;color:#3d3d3d;
+}
+
+/* ============ PRINT ============ */
+@media print{
+  html,body{background:#fff !important}
+  .ui{display:none !important}
+  .preview{display:block;max-width:none;margin:0;padding:0}
+  #paper-stack{display:block}
+  .page-wrap{
+    width:auto !important;height:auto !important;
+    box-shadow:none !important;overflow:visible !important;background:none !important;
+    animation:none !important;
+  }
+  .page{transform:none !important}
+}
+</style>
+</head>
+<body>
+
+<div class="ui">
+  <header class="site-header">
+    <span class="badge">✂ paper · placebo · no wifi</span>
+    <h1>Print Your <em>Feed</em></h1>
+    <p class="tagline">A social feed you can hold in your hands. Print it, cut it out, and scroll absolutely nothing — until the urge to pick up your phone quietly gives up and leaves.</p>
+  </header>
+
+  <div class="controls">
+    <div class="seg" role="group" aria-label="Paper size">
+      <button data-paper="a4" class="on">A4</button>
+      <button data-paper="letter">US Letter</button>
+    </div>
+    <button class="print-btn" id="printBtn">Print it 🖨</button>
+  </div>
+
+  <div class="cards">
+    <button class="card on" data-mode="regular">
+      <span class="num">01</span>
+      <h3>Regular</h3>
+      <p>One phone-sized feed with cut-out lines, plus instructions for quitting the scroll on the rest of the sheet.</p>
+    </button>
+    <button class="card" data-mode="infinite">
+      <span class="num">02</span>
+      <h3>Infinite Scroll</h3>
+      <p>Two feeds with white tape bars at the bottom. Join them into a loop and scroll forever — through the same six posts.</p>
+    </button>
+    <button class="card" data-mode="custom">
+      <span class="num">03</span>
+      <h3>Custom</h3>
+      <p>Write your own fake posts, choose regular or infinite, and print a feed that is exactly as boring as you designed it.</p>
+    </button>
+  </div>
+
+  <div class="custom-panel" id="customPanel" hidden>
+    <div class="cp-head">Make it yours</div>
+    <div class="cp-grid">
+      <label class="field">
+        <span>Format</span>
+        <select id="customMode">
+          <option value="regular">Regular — one cut-out feed</option>
+          <option value="infinite">Infinite scroll — loop of two strips</option>
+        </select>
+      </label>
+      <label class="field check">
+        <input type="checkbox" id="includeDefaults" checked />
+        <span>Mix in the default placebo posts</span>
+      </label>
+    </div>
+    <label class="field">
+      <span>Your posts — one per line. Use <code>username | text</code> for a custom handle.</span>
+      <textarea id="customText" rows="7" placeholder="your future self | thanks for putting the phone down. we got so much done.&#10;the algorithm | I gave up. Go outside.&#10;you | I am reading paper and it is fine.&#10;nobody | posted nothing. it was great."></textarea>
+    </label>
+    <div class="cp-actions">
+      <button class="preview-btn" id="previewCustomBtn">
+        Preview my feed <span class="arrow">↓</span>
+      </button>
+      <span class="cp-note">Or just keep typing — the preview below updates live.</span>
+    </div>
+  </div>
+</div>
+
+<div class="ui">
+  <div class="preview-heading">
+    <div class="kicker">Live preview</div>
+    <h2>What your paper feed looks like</h2>
+    <p>This is exactly what will come out of your printer.</p>
+  </div>
+</div>
+
+<div class="preview">
+  <div id="paper-stack"></div>
+</div>
+
+<div class="ui">
+  <div class="preview-bar center">
+    <span id="previewLabel">Preview · A4 · Regular</span>
+  </div>
+
+  <div class="privacy-wrap">
+    <button class="privacy-btn" id="privacyBtn" aria-expanded="false" aria-controls="privacyPanel">
+      <span class="dot"></span> Privacy Policy <span class="caret">▼</span>
+    </button>
+    <div class="privacy-panel" id="privacyPanel" hidden>
+      <strong>Privacy Policy:</strong> Nothing is sent anywhere except your printer.<br>
+      Unless you mail the paper to Meta or Google's HQ.<br>
+      Don't do that.
+    </div>
+  </div>
+
+  <footer class="site-footer">
+    <p>Inspired by the placebo feed at <a href="https://chillspace.ai" target="_blank" rel="noopener">chillspace.ai</a>.<br>
+    Made of paper. No cookies — because it's paper.</p>
+  </footer>
+</div>
+
+<script>
+/* =========================================================
+   DATA
+   ========================================================= */
+const DEFAULT_POSTS = [
+  { u:'the void', t:'This post is empty on purpose. So is the next one. Keep scrolling — nothing will happen. That is the entire point.', time:'now' },
+  { u:'future you', t:'Posted from six months from now: “Thanks for putting the phone down. We got so much done.”', time:'in 6mo' },
+  { u:'the algorithm', t:'We reviewed your behaviour and recommended: a walk. That is the whole recommendation. Just a walk.', time:'2m' },
+  { u:'outside', t:'19°C. Light breeze. Zero notifications. No queue, no feed, no ads.', time:'live', img:'☀', cap:'view from the window' },
+  { u:'your thumb', t:'Day 1 of retirement. Feels weird. Feels good.', time:'1h' },
+  { u:'sponsored', t:'This ad is for nothing. You do not need it. You never did.', time:'ad' },
+  { u:'trending', t:'#silence — 0 posts. Everyone is busy living.', time:'3h' },
+  { u:'notifications', t:'0 new. Enjoy the quiet.', time:'—' },
+  { u:'the grass', t:'It is, in fact, greener. Come and check.', time:'4h', img:'🌿', cap:'literal grass' },
+  { u:'your group chat', t:'Everyone muted themselves. It has been lovely.', time:'5h' },
+  { u:'screen time', t:'Today: 0 minutes. And yet here you are, reading paper.', time:'today' },
+  { u:'chillspace', t:'A feed you can hold. Battery infinite. Notifications none. Ads: one, and it is this sentence.', time:'6h' },
+  { u:'a stranger', t:'Did something you do not care about. We are not going to tell you what.', time:'7h' },
+  { u:'the urge', t:'You felt it just now, didn’t you? The little pull. Notice it. Let it pass.', time:'now' },
+  { u:'paper', t:'I don’t refresh. I don’t ping. I don’t track you. I just sit here. Love, paper.', time:'8h' },
+  { u:'the end', t:'You have reached the end of the feed. There isn’t one. That is the joke.', time:'∞' },
+  { u:'today', t:'Nothing happened. It was a good day.', time:'9h' },
+  { u:'your eyes', t:'Look up. That is the post.', time:'now' },
+  { u:'inbox', t:'1 unread message: “go outside.” — from everyone', time:'10h' },
+  { u:'someone', t:'Is having a great time right now and not posting about it. Truly unhinged behaviour.', time:'11h' },
+  { u:'the scroll', t:'You scrolled 0 pixels. Your brain didn’t notice. Interesting, isn’t it?', time:'now' },
+  { u:'the feed', t:'I have no more posts for you. I never had any. We are both free.', time:'∞' }
+];
+
+const PAPER = {
+  a4:     { w:210,   h:297,   label:'A4' },
+  letter: { w:215.9, h:279.4, label:'US Letter' }
+};
+
+const state = {
+  mode:'regular',
+  paper:'a4',
+  customMode:'regular',
+  customText:'',
+  includeDefaults:true
+};
+
+/* =========================================================
+   HELPERS
+   ========================================================= */
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+function fill(posts, start, n){
+  if (!posts || !posts.length) return [];
+  const out = [];
+  for (let i = 0; i < n; i++) out.push(posts[(start + i) % posts.length]);
+  return out;
+}
+
+/* =========================================================
+   RENDER: A SINGLE POST
+   ========================================================= */
+function postHTML(p){
+  const u = (p.u || 'someone').trim() || 'someone';
+  const av = esc(u.charAt(0).toUpperCase());
+  const img = p.img
+    ? `<div class="p-img"><span class="p-img-glyph">${esc(p.img)}</span>${p.cap ? `<em>${esc(p.cap)}</em>` : ''}</div>`
+    : '';
+  return `<div class="post">
+    <div class="p-head">
+      <div class="av">${av}</div>
+      <div class="p-who"><b>${esc(u)}</b> <span>· ${esc(p.time || '2h')}</span></div>
+      <div class="p-more">···</div>
+    </div>
+    <div class="p-text">${esc(p.t)}</div>
+    ${img}
+    <div class="p-foot"><span>♡ 0</span><span>◌ 0</span><span>↗</span></div>
+  </div>`;
+}
+
+/* =========================================================
+   INSTRUCTIONS
+   ========================================================= */
+function instructionsRegular(){
+  return `<div class="inst">
+    <div class="inst-kicker">Placebo Feed · Regular</div>
+    <h2>How to use your paper feed</h2>
+    <ol class="steps">
+      <li><b>Cut it out.</b> Follow the dashed line. Scissors, not teeth.</li>
+      <li><b>Pocket it.</b> Put it where your phone used to live.</li>
+      <li><b>Scroll it.</b> When the urge hits, pull it out and drag your thumb across it. Nothing moves. Nothing loads. Nothing is tracked.</li>
+      <li><b>Read a post.</b> They never update. That is the feature, not a bug.</li>
+      <li><b>Write your own.</b> Use the blank back. No likes, no algorithm, no audience. Just you.</li>
+      <li><b>Put it down.</b> Go and do the thing you were avoiding.</li>
+    </ol>
+    <div class="why">
+      <h3>Why this works</h3>
+      <p>Scrolling is a loop: <b>urge → thumb → reward</b>. Paper keeps the first two and deletes the third. Your thumb still moves. Your brain gets bored. The urge fades — usually in under ninety seconds.</p>
+    </div>
+    <div class="specs">
+      <span>Battery ∞</span><span>Notifications 0</span><span>Data collected none</span><span>Ads 1 (this one)</span>
+    </div>
+    <div class="tip">Tip: keep it in your pocket for a week. If you lose it, that is also fine — you didn’t need it either.</div>
+  </div>`;
+}
+
+function instructionsInfinite(){
+  return `<div class="inst">
+    <div class="inst-kicker">Placebo Feed · Infinite Scroll</div>
+    <h2>How to build your infinite scroll</h2>
+    <ol class="steps two-col">
+      <li><b>Cut out both strips.</b> Straight lines along the dashes. A ruler helps.</li>
+      <li><b>Tape A to B.</b> Strip A’s white bar goes on the <i>top</i> of strip B.</li>
+      <li><b>Tape B to A.</b> Strip B’s white bar goes on the <i>top</i> of strip A.</li>
+      <li><b>You now have a loop.</b> Hold it like a phone, thumb at the bottom.</li>
+      <li><b>Scroll.</b> Slide the loop upward. New posts appear. They are the same posts.</li>
+      <li><b>Sit with it.</b> It never ends and nothing arrives. Notice how fast you get bored.</li>
+    </ol>
+    <div class="why-row">
+      <div class="why">
+        <h3>Why this works</h3>
+        <p>Your thumb is trained to expect novelty. The loop gives it motion without novelty. After a few passes it stops being interesting — and so does your phone.</p>
+      </div>
+      <div class="why">
+        <h3>Pro tip</h3>
+        <p>Tape the join flat and tight. A loose loop is a fidget toy, not a feed. Roll the seam with a pencil to smooth it out.</p>
+      </div>
+    </div>
+    <div class="specs">
+      <span>Battery ∞</span><span>Infinite by design</span><span>Nothing new ever</span><span>Ads 1 (this one)</span>
+    </div>
+  </div>`;
+}
+
+/* =========================================================
+   RENDER: PAGES
+   ========================================================= */
+function regularPage(posts){
+  const feed = fill(posts, 0, 9).map(postHTML).join('');
+  return `<div class="page-wrap"><div class="page">
+    <div class="page-inner">
+      <div class="col-left">
+        <div class="cut-box phone-box">
+          <div class="phone">
+            <div class="statusbar"><span>9:41</span><span>paper · ∞</span></div>
+            <div class="feed">${feed}</div>
+          </div>
+        </div>
+        <div class="cut-label">✂ cut along the dashed line</div>
+      </div>
+      <div class="col-right">${instructionsRegular()}</div>
+    </div>
+  </div></div>`;
+}
+
+function stripHTML(label, posts, tapeText){
+  return `<div class="cut-box strip-box">
+    <div class="strip">
+      <div class="strip-label">Strip ${label} · top</div>
+      <div class="strip-feed">${posts.map(postHTML).join('')}</div>
+      <div class="tape-bar"><span>${tapeText}</span></div>
+    </div>
+  </div>`;
+}
+
+function infinitePage(posts){
+  const a = fill(posts, 0, 6);
+  const b = fill(posts, 6, 6);
+  return `<div class="page-wrap"><div class="page">
+    <div class="page-inner col">
+      <div class="strip-row">
+        ${stripHTML('A', a, 'Tape this white bar to the <b>top</b> of strip B')}
+        ${stripHTML('B', b, 'Tape this white bar to the <b>top</b> of strip A')}
+      </div>
+      ${instructionsInfinite()}
+    </div>
+  </div></div>`;
+}
+
+/* =========================================================
+   CUSTOM POSTS
+   ========================================================= */
+function customPosts(){
+  const lines = state.customText.split('\n').map(s => s.trim()).filter(Boolean);
+  const mine = lines.map(line => {
+    const parts = line.split('|');
+    if (parts.length > 1){
+      return { u: parts[0].trim() || 'you', t: parts.slice(1).join('|').trim(), time:'now' };
+    }
+    return { u:'you', t: line, time:'now' };
+  });
+  const all = state.includeDefaults ? mine.concat(DEFAULT_POSTS) : mine;
+  return all.length ? all : DEFAULT_POSTS;
+}
+
+/* =========================================================
+   MAIN RENDER
+   ========================================================= */
+const stack      = document.getElementById('paper-stack');
+const pageStyle  = document.getElementById('page-style');
+const previewLbl = document.getElementById('previewLabel');
+
+function render(){
+  const paper = PAPER[state.paper];
+  stack.style.setProperty('--pw', paper.w + 'mm');
+  stack.style.setProperty('--ph', paper.h + 'mm');
+  pageStyle.textContent = `@page{ size:${paper.w}mm ${paper.h}mm; margin:0; }`;
+
+  let html = '';
+  let label = '';
+
+  if (state.mode === 'regular'){
+    html  = regularPage(DEFAULT_POSTS);
+    label = 'Regular';
+  } else if (state.mode === 'infinite'){
+    html  = infinitePage(DEFAULT_POSTS);
+    label = 'Infinite Scroll';
+  } else {
+    const posts = customPosts();
+    html  = state.customMode === 'regular' ? regularPage(posts) : infinitePage(posts);
+    label = 'Custom · ' + (state.customMode === 'regular' ? 'Regular' : 'Infinite Scroll');
+  }
+
+  stack.innerHTML = html;
+  previewLbl.textContent = `Preview · ${paper.label} · ${label}`;
+  fit();
+}
+
+function fit(){
+  const avail = stack.parentElement.clientWidth - 48;
+  const pwPx  = PAPER[state.paper].w * (96 / 25.4);
+  let s = avail / pwPx;
+  s = Math.min(s, 0.82);
+  s = Math.max(s, 0.2);
+  stack.style.setProperty('--s', s.toFixed(4));
+}
+
+function flashPreview(){
+  const pw = stack.querySelector('.page-wrap');
+  if (!pw) return;
+  pw.classList.add('flash');
+  pw.addEventListener('animationend', () => pw.classList.remove('flash'), { once:true });
+}
+
+/* =========================================================
+   EVENTS
+   ========================================================= */
+document.querySelectorAll('[data-mode]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    state.mode = btn.dataset.mode;
+    document.querySelectorAll('[data-mode]').forEach(b => b.classList.toggle('on', b === btn));
+    document.getElementById('customPanel').hidden = state.mode !== 'custom';
+    render();
+    if (state.mode === 'custom') {
+      document.getElementById('customText').focus({ preventScroll:true });
+    }
+  });
+});
+
+document.querySelectorAll('[data-paper]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    state.paper = btn.dataset.paper;
+    document.querySelectorAll('[data-paper]').forEach(b => b.classList.toggle('on', b === btn));
+    render();
+  });
+});
+
+document.getElementById('customMode').addEventListener('change', e => {
+  state.customMode = e.target.value;
+  render();
+});
+
+document.getElementById('includeDefaults').addEventListener('change', e => {
+  state.includeDefaults = e.target.checked;
+  render();
+});
+
+let typing;
+document.getElementById('customText').addEventListener('input', e => {
+  state.customText = e.target.value;
+  clearTimeout(typing);
+  typing = setTimeout(render, 220);
+});
+
+/* preview custom feed button */
+document.getElementById('previewCustomBtn').addEventListener('click', () => {
+  clearTimeout(typing);
+  render();
+  flashPreview();
+  document.querySelector('.preview').scrollIntoView({ behavior:'smooth', block:'start' });
+});
+
+/* privacy policy toggle */
+const privacyBtn   = document.getElementById('privacyBtn');
+const privacyPanel = document.getElementById('privacyPanel');
+privacyBtn.addEventListener('click', () => {
+  const open = privacyBtn.getAttribute('aria-expanded') === 'true';
+  privacyBtn.setAttribute('aria-expanded', String(!open));
+  privacyPanel.hidden = open;
+});
+
+document.getElementById('printBtn').addEventListener('click', () => window.print());
+
+window.addEventListener('resize', fit);
+
+/* GO */
+render();
+</script>
+</body>
+</html>
